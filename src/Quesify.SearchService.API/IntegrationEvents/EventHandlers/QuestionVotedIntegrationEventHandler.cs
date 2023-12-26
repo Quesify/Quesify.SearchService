@@ -1,10 +1,10 @@
 ﻿using Nest;
 using Quesify.SearchService.API.Aggregates.Questions;
+using Quesify.SearchService.API.Aggregates.Users;
 using Quesify.SearchService.API.Constant;
 using Quesify.SearchService.API.Data;
 using Quesify.SearchService.API.IntegrationEvents.Events;
 using Quesify.SharedKernel.EventBus.Abstractions;
-using Quesify.SharedKernel.Utilities.Exceptions;
 
 namespace Quesify.SearchService.API.IntegrationEvents.EventHandlers;
 
@@ -23,6 +23,12 @@ public class QuestionVotedIntegrationEventHandler : IIntegrationEventHandler<Que
 
     public async Task HandleAsync(QuestionVotedIntegrationEvent integrationEvent)
     {
+        await UpdateNewQuestionScoreAsync(integrationEvent);
+        await UpdateUserScoreAsync(integrationEvent);
+    }
+
+    private async Task UpdateNewQuestionScoreAsync(QuestionVotedIntegrationEvent integrationEvent)
+    {
         var question = (await _elasticClient.GetAsync<Question>(integrationEvent.QuestionId, o => o.Index(QuestionConstants.IndexName))).Source;
         if (question == null)
         {
@@ -34,13 +40,37 @@ public class QuestionVotedIntegrationEventHandler : IIntegrationEventHandler<Que
 
         var questionUpdateResponse = await _elasticClient
             .UpdateAsync<Question>(
-                integrationEvent.QuestionId, 
+                integrationEvent.QuestionId,
                 selector: o => o.Index(QuestionConstants.IndexName).Doc(question)
             );
 
         if (!questionUpdateResponse.IsValid)
         {
             _logger.LogError("Elasticsearch question update error: {message}", questionUpdateResponse.ServerError.Error.ToString());
+            return;
+        }
+    }
+
+    private async Task UpdateUserScoreAsync(QuestionVotedIntegrationEvent integrationEvent)
+    {
+        var user = (await _elasticClient.GetAsync<User>(integrationEvent.QuestionOwnerUserId, o => o.Index(UserConstants.IndexName))).Source;
+        if (user == null)
+        {
+            _logger.LogError("The user {UserId} was not found.", integrationEvent.QuestionOwnerUserId);
+            return;
+        }
+
+        user.Score += integrationEvent.UserScoreAction;
+
+        var userUpdateResponse = await _elasticClient
+            .UpdateAsync<User>(
+                integrationEvent.QuestionOwnerUserId,
+                selector: o => o.Index(UserConstants.IndexName).Doc(user)
+            );
+
+        if (!userUpdateResponse.IsValid)
+        {
+            _logger.LogError("Elasticsearch user update error: {message}", userUpdateResponse.ServerError.Error.ToString());
             return;
         }
     }

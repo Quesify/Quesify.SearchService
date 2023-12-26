@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Nest;
 using Quesify.SearchService.API.Aggregates.Questions;
+using Quesify.SearchService.API.Aggregates.Users;
 using Quesify.SearchService.API.Constant;
 using Quesify.SearchService.API.Data;
 using Quesify.SearchService.API.Models;
@@ -45,18 +46,44 @@ public class QuestionsController : BaseController
                 )
             );
 
+        var userIds = questions.Documents
+           .Select(o => o.UserId)
+           .Distinct()
+           .ToArray();
+
+        var users = (await _elasticClient
+            .SearchAsync<User>(selector => selector
+                .Index(UserConstants.IndexName)
+                .Query(query => query
+                    .Ids(i => i
+                        .Values(userIds))
+                )
+            )).Documents;
+
         var response = new List<SearchForQuestionResponse>();
         foreach (var question in questions.Documents)
         {
+            var user = users.FirstOrDefault(o => o.Id == question.UserId)!;
             response.Add(new SearchForQuestionResponse()
             {
+                Id = question.Id,
                 Body = question.Body,
                 Title = question.Title,
                 QuestionScore = question.Score,
+                User = new SearchForQuestionUserResponse()
+                {
+                    Id = user.Id,
+                    UserName = user.UserName,
+                    ProfileImageUrl = user.ProfileImageUrl,
+                    Score = user.Score
+                }
             });
         }
 
-        var result = new PaginateList<SearchForQuestionResponse>(response, request.Page, request.Size, (int)questions.Total);
+        var countRequest = new CountRequest(Indices.Index(QuestionConstants.IndexName));
+        long totalCount = (await _elasticClient.CountAsync(countRequest)).Count;
+
+        var result = new PaginateList<SearchForQuestionResponse>(response, request.Page, request.Size, (int)totalCount);
         return OkResponse(data: result);
     }
 }

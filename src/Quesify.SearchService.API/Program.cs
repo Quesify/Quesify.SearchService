@@ -15,6 +15,9 @@ logger.LogInformation(appStartedLogMessage);
 var eventBus = app.Services.GetRequiredService<IEventBus>();
 await eventBus.SubscribeAsync<QuestionCreatedIntegrationEvent, QuestionCreatedIntegrationEventHandler>();
 await eventBus.SubscribeAsync<QuestionVotedIntegrationEvent, QuestionVotedIntegrationEventHandler>();
+await eventBus.SubscribeAsync<AnswerVotedIntegrationEvent, AnswerVotedIntegrationEventHandler>();
+await eventBus.SubscribeAsync<UserCreatedIntegrationEvent, UserCreatedIntegrationEventHandler>();
+await eventBus.SubscribeAsync<UserUpdatedIntegrationEvent, UserUpdatedIntegrationEventHandler>();
 
 if (app.Environment.IsDevelopment())
 {

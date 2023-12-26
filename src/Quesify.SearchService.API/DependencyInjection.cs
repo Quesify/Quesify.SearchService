@@ -44,7 +44,6 @@ public static class DependencyInjection
         {
             options.SwaggerDoc("v1", new OpenApiInfo { Title = "Quesify.SearchService.API", Version = "v1" });
             options.AddSecurity();
-            options.DocumentFilter<LowercaseDocumentFilter>();
             options.AddLowercaseDocumentFilter();
         });
 
@@ -105,6 +104,9 @@ public static class DependencyInjection
 
         services.AddTransient<QuestionCreatedIntegrationEventHandler>();
         services.AddTransient<QuestionVotedIntegrationEventHandler>();
+        services.AddTransient<AnswerVotedIntegrationEventHandler>();
+        services.AddTransient<UserCreatedIntegrationEventHandler>();
+        services.AddTransient<UserUpdatedIntegrationEventHandler>();
 
         return services;
     }
