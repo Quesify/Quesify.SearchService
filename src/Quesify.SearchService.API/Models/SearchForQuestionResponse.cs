@@ -13,6 +13,8 @@ public class SearchForQuestionResponse
 
     public SearchForQuestionUserResponse User { get; set; }
 
+    public DateTime CreationDate { get; set; }
+
     public SearchForQuestionResponse()
     {
         Title = null!;

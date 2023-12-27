@@ -75,8 +75,9 @@ public class QuestionsController : BaseController
                     Id = user.Id,
                     UserName = user.UserName,
                     ProfileImageUrl = user.ProfileImageUrl,
-                    Score = user.Score
-                }
+                    Score = user.Score,
+                },
+                CreationDate = question.CreationDate
             });
         }
 

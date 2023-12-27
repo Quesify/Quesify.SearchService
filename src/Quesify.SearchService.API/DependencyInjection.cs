@@ -12,6 +12,7 @@ using Quesify.SharedKernel.TimeProviders;
 using Quesify.SharedKernel.Utilities.Guards;
 using Serilog;
 using Serilog.Events;
+using Steeltoe.Discovery.Client;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -107,6 +108,8 @@ public static class DependencyInjection
         services.AddTransient<AnswerVotedIntegrationEventHandler>();
         services.AddTransient<UserCreatedIntegrationEventHandler>();
         services.AddTransient<UserUpdatedIntegrationEventHandler>();
+
+        services.AddDiscoveryClient(configuration);
 
         return services;
     }
